@@ -18,26 +18,6 @@ final List<LatLng> _latLngList = [
   LatLng(13.17, 77.55),
 ];
 
-final markers = _latLngList
-    .map(
-      (point) => Marker(
-        point: point,
-        width: 40,
-        height: 40,
-        builder: (context) => GestureDetector(
-          onTap: () {
-            print(point.longitude);
-          },
-          child: const Icon(
-            Icons.pin_drop,
-            size: 60,
-            color: Colors.blueAccent,
-          ),
-        ),
-      ),
-    )
-    .toList();
-
 class AnimatedMarkersMap extends StatefulWidget {
   const AnimatedMarkersMap({super.key});
 
@@ -45,12 +25,61 @@ class AnimatedMarkersMap extends StatefulWidget {
   State<AnimatedMarkersMap> createState() => _AnimatedMarkersMapState();
 }
 
-class _AnimatedMarkersMapState extends State<AnimatedMarkersMap> {
+class _AnimatedMarkersMapState extends State<AnimatedMarkersMap>
+    with SingleTickerProviderStateMixin {
   final _pageController = PageController();
+  late final AnimationController _animationController;
+  int _selectedIndex = 0;
+  List<Marker> _buildMarkers() {
+    final _markerList = <Marker>[];
+    for (var i = 0; i < _latLngList.length; i++) {
+      final item = _latLngList[i];
+      _markerList.add(
+        Marker(
+          point: item,
+          width: 55,
+          height: 55,
+          builder: (context) => GestureDetector(
+            onTap: () {
+              _selectedIndex = i;
+              setState(() {
+                _pageController.animateToPage(
+                  i,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.elasticOut,
+                );
+              });
+              // print(point.longitude);
+            },
+            child: _LocationMarker(
+              selected: _selectedIndex == i,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return _markerList;
+  }
+
+  @override
+  void initState() {
+    _animationController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 500));
+    _animationController.repeat(reverse: true);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   // List<Marker> _buildMarkers() {
   @override
   Widget build(BuildContext context) {
-    // final _markers = _buildMarkers();
+    final _markers = _buildMarkers();
     return Scaffold(
       appBar: AppBar(),
       body: Stack(
@@ -68,13 +97,15 @@ class _AnimatedMarkersMapState extends State<AnimatedMarkersMap> {
                 // userAgentPackageName: 'com.example.app',
                 // retinaMode: MediaQuery.of(context).devicePixelRatio > 1.0,
               ),
-              MarkerLayer(markers: markers),
+              MarkerLayer(markers: _markers),
               MarkerLayer(
                 markers: [
                   Marker(
+                    height: 60,
+                    width: 60,
                     point: LatLng(13, 77.5),
                     builder: (_) {
-                      return _MyLocationMaker();
+                      return _MyLocationMaker(_animationController);
                     },
                   )
                 ],
@@ -87,11 +118,13 @@ class _AnimatedMarkersMapState extends State<AnimatedMarkersMap> {
             bottom: 20,
             height: MediaQuery.of(context).size.height * 0.3,
             child: PageView.builder(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
               itemBuilder: ((context, index) {
-                final item = markers[index];
+                final item = _markers[index];
                 return _MapItemDetails(mapMarker: item);
               }),
-              itemCount: markers.length,
+              itemCount: _markers.length,
             ),
           )
         ],
@@ -100,15 +133,57 @@ class _AnimatedMarkersMapState extends State<AnimatedMarkersMap> {
   }
 }
 
-class _MyLocationMaker extends StatelessWidget {
+class _LocationMarker extends StatelessWidget {
+  const _LocationMarker({super.key, this.selected = false});
+  final bool selected;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 50,
-      width: 50,
-      decoration: const BoxDecoration(
-        color: Colors.indigo,
-        shape: BoxShape.circle,
+    return Center(
+      child: AnimatedContainer(
+        // height: 80,
+        // width: 80,
+        duration: const Duration(milliseconds: 400),
+        child: Icon(
+          Icons.pin_drop,
+          color: Colors.indigo,
+          size: selected ? 60 : 40,
+        ),
+      ),
+    );
+  }
+}
+
+class _MyLocationMaker extends AnimatedWidget {
+  const _MyLocationMaker(Animation<double> animation, {Key? key})
+      : super(key: key, listenable: animation);
+  @override
+  Widget build(BuildContext context) {
+    final value = (listenable as Animation<double>).value;
+    final newValue = lerpDouble(0.5, 1.0, value)!;
+    return Center(
+      child: Stack(
+        children: [
+          Center(
+            child: Container(
+              height: 50 * newValue,
+              width: 50 * newValue,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.indigo.withOpacity(0.5),
+              ),
+            ),
+          ),
+          Center(
+            child: Container(
+              height: 20,
+              width: 20,
+              decoration: const BoxDecoration(
+                color: Colors.indigo,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -125,8 +200,10 @@ class _MapItemDetails extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Card(
+        margin: EdgeInsets.zero,
         color: Colors.white,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
               child: Row(
@@ -155,6 +232,16 @@ class _MapItemDetails extends StatelessWidget {
                 ],
               ),
             ),
+            MaterialButton(
+              padding: EdgeInsets.zero,
+              onPressed: () {},
+              color: Colors.indigo,
+              elevation: 6,
+              child: const Text(
+                'CLICK',
+                style: TextStyle(color: Colors.white),
+              ),
+            )
           ],
         ),
       ),
