@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Bloc App',
-      home: HomePage(),
+      home: Cubit1(),
     );
   }
 }
@@ -33,14 +33,14 @@ class NamesCubit extends Cubit<String?> {
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class Cubit1 extends StatefulWidget {
+  const Cubit1({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<Cubit1> createState() => _Cubit1State();
 }
 
-class _HomePageState extends State<HomePage> {
+class _Cubit1State extends State<Cubit1> {
   late final NamesCubit cubit;
 
   @override
