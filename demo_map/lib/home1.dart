@@ -107,6 +107,14 @@ class _AnimatedMarkersMapState extends State<AnimatedMarkersMap>
                     builder: (_) {
                       return _MyLocationMaker(_animationController);
                     },
+                  ),
+                  Marker(
+                    height: 60,
+                    width: 60,
+                    point: LatLng(13, 77.5),
+                    builder: (_) {
+                      return _MyLocationMaker(_animationController);
+                    },
                   )
                 ],
               )
